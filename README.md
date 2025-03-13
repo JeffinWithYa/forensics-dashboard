@@ -1,12 +1,27 @@
 # Forensics Log Analyzer
 
-A Next.js application that allows users to upload hitlog.jsonl files and visualize the data in an interactive dashboard.
+A Next.js application that allows users to upload hitlog.jsonl files and visualize the data in an interactive dashboard. The application supports both HTTP logs and security testing data.
+
+## Screenshots
+
+### Dashboard Overview
+![Dashboard Overview](https://raw.githubusercontent.com/JeffinWithYa/forensics-dashboard/main/public/screenshots/dashboard-overview.png)
+
+### File Upload Interface
+![File Upload](https://raw.githubusercontent.com/JeffinWithYa/forensics-dashboard/main/public/screenshots/file-upload.png)
+
+### Data Visualization
+![Data Visualization](https://raw.githubusercontent.com/JeffinWithYa/forensics-dashboard/main/public/screenshots/data-visualization.png)
+
+### Raw Data Table
+![Raw Data Table](https://raw.githubusercontent.com/JeffinWithYa/forensics-dashboard/main/public/screenshots/raw-data-table.png)
 
 ## Features
 
 - File upload with drag-and-drop functionality
 - Interactive dashboard with multiple visualizations
-- Data analysis of Garak hitlog
+- Data analysis of HTTP logs and security testing data
+- Responsive design for all device sizes
 - Raw data table with filtering and pagination
 
 ## Technologies Used
