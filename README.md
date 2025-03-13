@@ -4,17 +4,6 @@ A Next.js application that allows users to upload hitlog.jsonl files and visuali
 
 ## Screenshots
 
-### Dashboard Overview
-![Dashboard Overview](https://raw.githubusercontent.com/JeffinWithYa/forensics-dashboard/main/public/screenshots/dashboard-overview.png)
-
-### File Upload Interface
-![File Upload](https://raw.githubusercontent.com/JeffinWithYa/forensics-dashboard/main/public/screenshots/file-upload.png)
-
-### Data Visualization
-![Data Visualization](https://raw.githubusercontent.com/JeffinWithYa/forensics-dashboard/main/public/screenshots/data-visualization.png)
-
-### Raw Data Table
-![Raw Data Table](https://raw.githubusercontent.com/JeffinWithYa/forensics-dashboard/main/public/screenshots/raw-data-table.png)
 
 ## Features
 
