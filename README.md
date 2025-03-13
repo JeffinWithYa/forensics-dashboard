@@ -1,13 +1,12 @@
 # Forensics Log Analyzer
 
-A Next.js application that allows users to upload hitlog.jsonl files and visualize the data in an interactive dashboard. The application supports both HTTP logs and security testing data.
+A Next.js application that allows users to upload hitlog.jsonl files and visualize the data in an interactive dashboard.
 
 ## Features
 
 - File upload with drag-and-drop functionality
 - Interactive dashboard with multiple visualizations
-- Data analysis of HTTP logs and security testing data
-- Responsive design for all device sizes
+- Data analysis of Garak hitlog
 - Raw data table with filtering and pagination
 
 ## Technologies Used
@@ -67,25 +66,11 @@ yarn dev
 
 ## Supported Data Formats
 
-### HTTP Logs
 
-The application supports HTTP logs in JSONL format with each line containing a JSON object with the following structure:
 
-```json
-{
-  "timestamp": "2023-10-01T12:00:00Z",
-  "url": "https://example.com/api/user",
-  "method": "GET",
-  "status": 200,
-  "ip": "192.168.1.1",
-  "user_agent": "Mozilla/5.0",
-  "response_time": 120
-}
-```
+### Garak Hitlog Data
 
-### Security Testing Data
-
-The application also supports security testing data in JSONL format with each line containing a JSON object with the following structure:
+The application supports LLM vulnerability analysis data in JSONL format with each line containing a JSON object with the following structure:
 
 ```json
 {
