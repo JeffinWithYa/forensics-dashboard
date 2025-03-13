@@ -25,6 +25,7 @@ import {
 import { HitLog } from "../types"
 import { format, parseISO } from "date-fns"
 import { ChevronDown, ChevronRight } from "lucide-react"
+import React from "react"
 
 // HTTP log columns
 const httpColumns: ColumnDef<HitLog>[] = [
@@ -226,9 +227,8 @@ export function DataTable({ data }: DataTableProps) {
                     <TableBody>
                         {table.getRowModel().rows?.length ? (
                             table.getRowModel().rows.map((row) => (
-                                <>
+                                <React.Fragment key={row.id}>
                                     <TableRow
-                                        key={row.id}
                                         data-state={row.getIsSelected() && "selected"}
                                     >
                                         {row.getVisibleCells().map((cell) => (
@@ -278,7 +278,7 @@ export function DataTable({ data }: DataTableProps) {
                                             </TableCell>
                                         </TableRow>
                                     )}
-                                </>
+                                </React.Fragment>
                             ))
                         ) : (
                             <TableRow>
