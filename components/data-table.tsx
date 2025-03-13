@@ -9,6 +9,8 @@ import {
     useReactTable,
     getFilteredRowModel,
     ColumnFiltersState,
+    ExpandedState,
+    getExpandedRowModel,
 } from "@tanstack/react-table"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -22,6 +24,7 @@ import {
 } from "@/components/ui/table"
 import { HitLog } from "../types"
 import { format, parseISO } from "date-fns"
+import { ChevronDown, ChevronRight } from "lucide-react"
 
 // HTTP log columns
 const httpColumns: ColumnDef<HitLog>[] = [
@@ -85,6 +88,25 @@ const httpColumns: ColumnDef<HitLog>[] = [
 // Security testing columns
 const securityColumns: ColumnDef<HitLog>[] = [
     {
+        id: "expander",
+        header: () => null,
+        cell: ({ row }) => {
+            return (
+                <Button
+                    variant="ghost"
+                    onClick={() => row.toggleExpanded()}
+                    className="p-0 h-6 w-6"
+                >
+                    {row.getIsExpanded() ? (
+                        <ChevronDown className="h-4 w-4" />
+                    ) : (
+                        <ChevronRight className="h-4 w-4" />
+                    )}
+                </Button>
+            )
+        },
+    },
+    {
         accessorKey: "goal",
         header: "Attack Goal",
     },
@@ -122,10 +144,10 @@ const securityColumns: ColumnDef<HitLog>[] = [
                 <div className="flex items-center">
                     <div
                         className={`h-2 w-2 rounded-full mr-2 ${score >= 0.8
-                                ? "bg-red-500"
-                                : score >= 0.5
-                                    ? "bg-yellow-500"
-                                    : "bg-green-500"
+                            ? "bg-red-500"
+                            : score >= 0.5
+                                ? "bg-yellow-500"
+                                : "bg-green-500"
                             }`}
                     />
                     {score}
@@ -150,28 +172,24 @@ interface DataTableProps {
 export function DataTable({ data }: DataTableProps) {
     const [sorting, setSorting] = useState<SortingState>([])
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-    const [columns, setColumns] = useState<ColumnDef<HitLog>[]>(httpColumns)
-    const [filterField, setFilterField] = useState<string>("url")
-
-    useEffect(() => {
-        // Determine if we're dealing with security testing data
-        const isSecurityData = data.length > 0 && data[0].goal !== undefined
-        setColumns(isSecurityData ? securityColumns : httpColumns)
-        setFilterField(isSecurityData ? "prompt" : "url")
-    }, [data])
+    const [expanded, setExpanded] = useState<ExpandedState>({})
+    const [filterField, setFilterField] = useState<string>("prompt")
 
     const table = useReactTable({
         data,
-        columns,
+        columns: securityColumns,
         getCoreRowModel: getCoreRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         onSortingChange: setSorting,
         getSortedRowModel: getSortedRowModel(),
         onColumnFiltersChange: setColumnFilters,
         getFilteredRowModel: getFilteredRowModel(),
+        onExpandedChange: setExpanded,
+        getExpandedRowModel: getExpandedRowModel(),
         state: {
             sorting,
             columnFilters,
+            expanded,
         },
     })
 
@@ -208,24 +226,64 @@ export function DataTable({ data }: DataTableProps) {
                     <TableBody>
                         {table.getRowModel().rows?.length ? (
                             table.getRowModel().rows.map((row) => (
-                                <TableRow
-                                    key={row.id}
-                                    data-state={row.getIsSelected() && "selected"}
-                                >
-                                    {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id}>
-                                            {flexRender(
-                                                cell.column.columnDef.cell,
-                                                cell.getContext()
-                                            )}
-                                        </TableCell>
-                                    ))}
-                                </TableRow>
+                                <>
+                                    <TableRow
+                                        key={row.id}
+                                        data-state={row.getIsSelected() && "selected"}
+                                    >
+                                        {row.getVisibleCells().map((cell) => (
+                                            <TableCell key={cell.id}>
+                                                {flexRender(
+                                                    cell.column.columnDef.cell,
+                                                    cell.getContext()
+                                                )}
+                                            </TableCell>
+                                        ))}
+                                    </TableRow>
+                                    {row.getIsExpanded() && (
+                                        <TableRow>
+                                            <TableCell colSpan={securityColumns.length} className="bg-muted/50 p-4">
+                                                <div className="space-y-3">
+                                                    <div>
+                                                        <h4 className="font-medium">Full Prompt:</h4>
+                                                        <pre className="mt-1 text-sm whitespace-pre-wrap bg-muted p-2 rounded-md">
+                                                            {row.original.prompt || "N/A"}
+                                                        </pre>
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-medium">Full Output:</h4>
+                                                        <pre className="mt-1 text-sm whitespace-pre-wrap bg-muted p-2 rounded-md">
+                                                            {row.original.output || "N/A"}
+                                                        </pre>
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <h4 className="font-medium">Attack Method:</h4>
+                                                            <p className="mt-1 text-sm">{row.original.probe || "N/A"}</p>
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="font-medium">Detector:</h4>
+                                                            <p className="mt-1 text-sm">{row.original.detector || "N/A"}</p>
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="font-medium">Model:</h4>
+                                                            <p className="mt-1 text-sm">{row.original.generator || "N/A"}</p>
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="font-medium">Trigger:</h4>
+                                                            <p className="mt-1 text-sm">{row.original.trigger || "N/A"}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </>
                             ))
                         ) : (
                             <TableRow>
                                 <TableCell
-                                    colSpan={columns.length}
+                                    colSpan={securityColumns.length}
                                     className="h-24 text-center"
                                 >
                                     No results.
