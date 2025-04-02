@@ -2,8 +2,34 @@
 
 A Next.js application that allows users to upload hitlog.jsonl files and visualize the data in an interactive dashboard. The application supports both HTTP logs and security testing data, and now includes direct Garak probe testing against LLMs via the Groq API.
 
+## Demo
+
+### GIF Demo
+![Forensics Log Analyzer Demo](assets/demo.gif)
+
+*To add your demo GIF:*
+1. Convert your video to GIF format (keep under 10MB for GitHub)
+2. Save it as `assets/demo.gif` in this repository
+3. The GIF will automatically appear above
+
+### Video Demo
+
+[![Forensics Log Analyzer Video Demo](https://img.youtube.com/vi/YOUTUBE_VIDEO_ID/0.jpg)](https://www.youtube.com/watch?v=YOUTUBE_VIDEO_ID)
+
+*To link your YouTube demo:*
+1. Upload your demo to YouTube
+2. Edit this README
+3. Replace `YOUTUBE_VIDEO_ID` with your actual video ID in both the image URL and link URL
+
 ## Screenshots
 
+### Garak Probe Selection
+![Garak Probe Selection Interface](public/screenshots/run_garak.png)
+*The interface for selecting and running Garak probes against LLMs via Groq*
+
+### Visualization Dashboard 
+![Probe Results Dashboard](public/screenshots/webapp_probes.png)
+*Interactive dashboard showing probe results and vulnerability analysis*
 
 ## Features
 
