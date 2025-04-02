@@ -33,12 +33,10 @@ A Next.js application that allows users to upload hitlog.jsonl files and visuali
 
 ## Features
 
-- File upload with drag-and-drop functionality
-- Interactive dashboard with multiple visualizations
-- Data analysis of HTTP logs and security testing data
-- Responsive design for all device sizes
+- Garak log upload with drag-and-drop functionality
+- Interactive dashboard with multiple visualizations for Garak results
 - Raw data table with filtering and pagination
-- **NEW:** Run Garak vulnerability probes directly against LLMs via Groq
+- Run Garak vulnerability probes directly against LLMs via Groq
 
 ## Technologies Used
 
