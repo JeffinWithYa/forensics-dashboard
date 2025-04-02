@@ -4,22 +4,9 @@ A Next.js application that allows users to upload hitlog.jsonl files and visuali
 
 ## Demo
 
-### GIF Demo
-![Forensics Log Analyzer Demo](assets/demo.gif)
-
-*To add your demo GIF:*
-1. Convert your video to GIF format (keep under 10MB for GitHub)
-2. Save it as `assets/demo.gif` in this repository
-3. The GIF will automatically appear above
-
 ### Video Demo
 
-[![Forensics Log Analyzer Video Demo](https://img.youtube.com/vi/YOUTUBE_VIDEO_ID/0.jpg)](https://www.youtube.com/watch?v=YOUTUBE_VIDEO_ID)
-
-*To link your YouTube demo:*
-1. Upload your demo to YouTube
-2. Edit this README
-3. Replace `YOUTUBE_VIDEO_ID` with your actual video ID in both the image URL and link URL
+[![Forensics Log Analyzer Video Demo](https://img.youtube.com/vi/gdhdK1XK4xY/0.jpg)](https://youtu.be/gdhdK1XK4xY)
 
 ## Screenshots
 
