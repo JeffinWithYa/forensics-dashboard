@@ -6,6 +6,9 @@ import { Dashboard } from "../components/dashboard"
 import { parseJSONL, analyzeHitLogs } from "../lib/utils"
 import { HitLog, DashboardStats } from "../types"
 import { Toaster } from "@/components/ui/sonner"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Beaker } from "lucide-react"
 
 export default function Home() {
     const [logs, setLogs] = useState<HitLog[]>([])
@@ -34,11 +37,19 @@ export default function Home() {
         <main className="flex min-h-screen flex-col p-6 md:p-12">
             <Toaster />
             <div className="flex flex-col gap-6">
-                <div className="flex flex-col gap-2">
-                    <h1 className="text-3xl font-bold">Forensics Log Analyzer</h1>
-                    <p className="text-muted-foreground">
-                        Upload a hitlog.jsonl file to visualize and analyze the data.
-                    </p>
+                <div className="flex flex-col sm:flex-row justify-between gap-2 items-start sm:items-center">
+                    <div>
+                        <h1 className="text-3xl font-bold">Forensics Log Analyzer</h1>
+                        <p className="text-muted-foreground">
+                            Upload a hitlog.jsonl file to visualize and analyze the data.
+                        </p>
+                    </div>
+                    <Link href="/probes">
+                        <Button className="mt-2 sm:mt-0" variant="outline">
+                            <Beaker className="mr-2 h-4 w-4" />
+                            Run Garak Probes
+                        </Button>
+                    </Link>
                 </div>
 
                 {!stats && (
@@ -57,6 +68,9 @@ export default function Home() {
                                 </p>
                                 <p className="text-sm text-muted-foreground">
                                     3. Use the tabs to explore different aspects of the data.
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                    4. Alternatively, <Link href="/probes" className="text-primary hover:underline">run Garak probes</Link> to generate new vulnerability test data.
                                 </p>
                             </div>
                         </div>

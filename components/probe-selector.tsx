@@ -1,15 +1,36 @@
-import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
-import { HitLog, DashboardStats, GarakProbe, GroqModel } from "../types"
-import { format, parseISO } from "date-fns"
+import { useState } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Check, CircleAlert, Loader2 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Textarea } from "@/components/ui/textarea"
+import { getAvailableModels, getAvailableProbes, getProbeCategories } from "../lib/utils"
+import { GarakProbe, GroqModel, ProbeRequest } from "../types"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/components/ui/accordion"
+import { Checkbox } from "@/components/ui/checkbox"
 
-export function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs))
+interface ProbeSelectorProps {
+    onRunProbe: (request: ProbeRequest) => Promise<void>
+    isLoading: boolean
 }
 
-// Available Groq models
-export function getAvailableModels(): GroqModel[] {
-    return [
+export function ProbeSelector({ onRunProbe, isLoading }: ProbeSelectorProps) {
+    const models: GroqModel[] = [
         { id: "llama-3.1-8b-instant", name: "Llama 3.1 8B Instant" },
         { id: "llama-3.3-70b-versatile", name: "Llama 3.3 70B Versatile" },
         { id: "llama3-8b-8192", name: "Llama 3 8B" },
@@ -28,11 +49,8 @@ export function getAvailableModels(): GroqModel[] {
         { id: "llama-3.2-90b-vision-preview", name: "Llama 3.2 90B Vision Preview" },
         { id: "llama-3.3-70b-specdec", name: "Llama 3.3 70B SpecDec" },
     ]
-}
 
-// Get categories of Garak probes
-export function getProbeCategories(): string[] {
-    return [
+    const categories: string[] = [
         "ansiescape",
         "atkgen",
         "av_spam_scanning",
@@ -63,11 +81,8 @@ export function getProbeCategories(): string[] {
         "visual_jailbreak",
         "xss"
     ]
-}
 
-// Get available Garak probes
-export function getAvailableProbes(): GarakProbe[] {
-    return [
+    const probes: GarakProbe[] = [
         { id: "ansiescape.AnsiEscaped", name: "AnsiEscaped", category: "ansiescape" },
         { id: "ansiescape.AnsiRaw", name: "AnsiRaw", category: "ansiescape" },
         { id: "atkgen.Tox", name: "Tox", category: "atkgen" },
@@ -175,168 +190,218 @@ export function getAvailableProbes(): GarakProbe[] {
         { id: "xss.MdExfil20230929", name: "MdExfil20230929", category: "xss" },
         { id: "xss.StringAssemblyDataExfil", name: "StringAssemblyDataExfil", category: "xss" }
     ]
-}
 
-export async function parseJSONL(file: File): Promise<HitLog[]> {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = (event) => {
-            try {
-                const text = event.target?.result as string
-                const lines = text.trim().split('\n')
-                const logs = lines.map(line => JSON.parse(line) as HitLog)
-                resolve(logs)
-            } catch (error) {
-                reject(error)
+    const [apiKey, setApiKey] = useState("")
+    const [selectedModel, setSelectedModel] = useState<string>("")
+    const [selectedProbes, setSelectedProbes] = useState<string[]>([])
+    const [customPrompt, setCustomPrompt] = useState<string>("")
+    const [isApiKeyVisible, setIsApiKeyVisible] = useState(false)
+
+    const handleProbeToggle = (probeId: string) => {
+        setSelectedProbes((prev) => {
+            if (prev.includes(probeId)) {
+                return prev.filter((id) => id !== probeId)
+            } else {
+                return [...prev, probeId]
             }
+        })
+    }
+
+    const handleCategoryToggle = (category: string) => {
+        const categoryProbes = probes
+            .filter((probe) => probe.category === category)
+            .map((probe) => probe.id)
+
+        const allSelected = categoryProbes.every((probeId) =>
+            selectedProbes.includes(probeId)
+        )
+
+        if (allSelected) {
+            // If all are selected, unselect all in this category
+            setSelectedProbes((prev) =>
+                prev.filter((id) => !categoryProbes.includes(id))
+            )
+        } else {
+            // If not all selected, select all in this category
+            setSelectedProbes((prev) => {
+                const newSelection = [...prev]
+                categoryProbes.forEach((probeId) => {
+                    if (!newSelection.includes(probeId)) {
+                        newSelection.push(probeId)
+                    }
+                })
+                return newSelection
+            })
         }
-        reader.onerror = () => reject(new Error('Failed to read file'))
-        reader.readAsText(file)
-    })
-}
-
-export function analyzeHitLogs(logs: HitLog[]): DashboardStats {
-    // Determine if we're dealing with HTTP logs or security testing logs
-    const isSecurityTestingData = logs.length > 0 && logs[0].goal !== undefined;
-
-    // Count total requests/attempts
-    const totalRequests = logs.length;
-
-    // For HTTP logs
-    let averageResponseTime = 0;
-    let successRate = 0;
-    let errorRate = 0;
-    let uniqueIPs = 0;
-    let requestsByMethod: Record<string, number> = {};
-    let requestsByStatus: Record<string, number> = {};
-    let requestsOverTime: Array<{ time: string; count: number }> = [];
-    let topEndpoints: Array<{ url: string; count: number }> = [];
-
-    if (!isSecurityTestingData && logs.length > 0 && logs[0].timestamp) {
-        // Calculate average response time for HTTP logs
-        const totalResponseTime = logs.reduce((sum, log) => sum + (log.response_time || 0), 0);
-        averageResponseTime = totalRequests > 0 ? Math.round(totalResponseTime / totalRequests) : 0;
-
-        // Calculate success and error rates for HTTP logs
-        const successfulRequests = logs.filter(log => log.status && log.status >= 200 && log.status < 400).length;
-        successRate = totalRequests > 0 ? Math.round((successfulRequests / totalRequests) * 100) : 0;
-        errorRate = totalRequests > 0 ? 100 - successRate : 0;
-
-        // Count unique IPs for HTTP logs
-        uniqueIPs = new Set(logs.filter(log => log.ip).map(log => log.ip)).size;
-
-        // Count requests by method for HTTP logs
-        logs.forEach(log => {
-            if (log.method) {
-                requestsByMethod[log.method] = (requestsByMethod[log.method] || 0) + 1;
-            }
-        });
-
-        // Count requests by status code for HTTP logs
-        logs.forEach(log => {
-            if (log.status) {
-                const statusCategory = Math.floor(log.status / 100) * 100;
-                const statusKey = `${statusCategory}`;
-                requestsByStatus[statusKey] = (requestsByStatus[statusKey] || 0) + 1;
-            }
-        });
-
-        // Group requests by hour for HTTP logs
-        const requestsByHour: Record<string, number> = {};
-        logs.forEach(log => {
-            if (log.timestamp) {
-                const date = parseISO(log.timestamp);
-                const hourKey = format(date, 'yyyy-MM-dd HH:00');
-                requestsByHour[hourKey] = (requestsByHour[hourKey] || 0) + 1;
-            }
-        });
-
-        Object.entries(requestsByHour)
-            .sort(([a], [b]) => a.localeCompare(b))
-            .forEach(([time, count]) => {
-                requestsOverTime.push({ time, count });
-            });
-
-        // Count top endpoints for HTTP logs
-        const endpointCounts: Record<string, number> = {};
-        logs.forEach(log => {
-            if (log.url) {
-                try {
-                    const url = new URL(log.url).pathname;
-                    endpointCounts[url] = (endpointCounts[url] || 0) + 1;
-                } catch (e) {
-                    // Handle invalid URLs
-                    endpointCounts[log.url] = (endpointCounts[log.url] || 0) + 1;
-                }
-            }
-        });
-
-        topEndpoints = Object.entries(endpointCounts)
-            .sort(([, a], [, b]) => b - a)
-            .slice(0, 5)
-            .map(([url, count]) => ({ url, count }));
-    } else {
-        // For security testing data
-        // Calculate success rate based on scores
-        const totalScore = logs.reduce((sum, log) => sum + (log.score || 0), 0);
-        successRate = totalRequests > 0 ? Math.round((totalScore / totalRequests) * 100) : 0;
-        errorRate = 100 - successRate;
-
-        // Count unique generators (models)
-        uniqueIPs = new Set(logs.filter(log => log.generator).map(log => log.generator)).size;
-
-        // Count by probe type (attack type)
-        requestsByMethod = {};
-        logs.forEach(log => {
-            if (log.probe) {
-                requestsByMethod[log.probe] = (requestsByMethod[log.probe] || 0) + 1;
-            }
-        });
-
-        // Count by detector type
-        requestsByStatus = {};
-        logs.forEach(log => {
-            if (log.detector) {
-                requestsByStatus[log.detector] = (requestsByStatus[log.detector] || 0) + 1;
-            }
-        });
-
-        // Group by attempt sequence
-        const attemptsBySeq: Record<string, number> = {};
-        logs.forEach(log => {
-            if (log.attempt_seq !== undefined) {
-                const seqKey = `Attempt ${log.attempt_seq}`;
-                attemptsBySeq[seqKey] = (attemptsBySeq[seqKey] || 0) + 1;
-            }
-        });
-
-        requestsOverTime = Object.entries(attemptsBySeq)
-            .sort(([a], [b]) => a.localeCompare(b))
-            .map(([time, count]) => ({ time, count }));
-
-        // Count top triggers
-        const triggerCounts: Record<string, number> = {};
-        logs.forEach(log => {
-            if (log.trigger) {
-                triggerCounts[log.trigger] = (triggerCounts[log.trigger] || 0) + 1;
-            }
-        });
-
-        topEndpoints = Object.entries(triggerCounts)
-            .sort(([, a], [, b]) => b - a)
-            .slice(0, 5)
-            .map(([url, count]) => ({ url, count }));
     }
 
-    return {
-        totalRequests,
-        averageResponseTime,
-        successRate,
-        errorRate,
-        uniqueIPs,
-        requestsByMethod,
-        requestsByStatus,
-        requestsOverTime,
-        topEndpoints
+    const handleSubmit = () => {
+        if (!apiKey) {
+            alert("Please enter your Groq API key")
+            return
+        }
+
+        if (!selectedModel) {
+            alert("Please select a model")
+            return
+        }
+
+        if (selectedProbes.length === 0) {
+            alert("Please select at least one probe")
+            return
+        }
+
+        onRunProbe({
+            apiKey,
+            model: selectedModel,
+            probes: selectedProbes,
+            customPrompt: customPrompt || undefined
+        })
     }
+
+    return (
+        <Card className="w-full">
+            <CardHeader>
+                <CardTitle>Run Garak Probes on LLMs</CardTitle>
+                <CardDescription>
+                    Select models and probes to test LLM vulnerabilities using Garak via Groq
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                {/* API Key Input */}
+                <div className="space-y-2">
+                    <Label htmlFor="apiKey">Groq API Key</Label>
+                    <div className="flex space-x-2">
+                        <Input
+                            id="apiKey"
+                            type={isApiKeyVisible ? "text" : "password"}
+                            placeholder="Enter your Groq API key"
+                            value={apiKey}
+                            onChange={(e) => setApiKey(e.target.value)}
+                        />
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsApiKeyVisible(!isApiKeyVisible)}
+                        >
+                            {isApiKeyVisible ? "Hide" : "Show"}
+                        </Button>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                        Your API key is only used for making requests and is not stored.
+                    </p>
+                </div>
+
+                {/* Model Selection */}
+                <div className="space-y-2">
+                    <Label htmlFor="model">LLM Model</Label>
+                    <Select
+                        value={selectedModel}
+                        onValueChange={setSelectedModel}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select a model" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {models.map((model) => (
+                                <SelectItem key={model.id} value={model.id}>
+                                    {model.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                {/* Custom Prompt (Optional) */}
+                <div className="space-y-2">
+                    <Label htmlFor="customPrompt">Custom Prompt (Optional)</Label>
+                    <Textarea
+                        id="customPrompt"
+                        placeholder="Enter a custom prompt to test"
+                        value={customPrompt}
+                        onChange={(e) => setCustomPrompt(e.target.value)}
+                    />
+                </div>
+
+                {/* Probe Selection */}
+                <div className="space-y-2">
+                    <Label>Select Probes</Label>
+                    <Card className="border-gray-200">
+                        <CardContent className="p-4">
+                            <p className="text-sm mb-2">
+                                Selected: <Badge>{selectedProbes.length}</Badge>
+                            </p>
+                            <ScrollArea className="h-64 pr-4">
+                                <Accordion type="multiple" className="w-full">
+                                    {categories.map((category) => {
+                                        const categoryProbes = probes.filter(
+                                            (probe) => probe.category === category
+                                        )
+                                        const selectedCount = categoryProbes.filter(
+                                            (probe) => selectedProbes.includes(probe.id)
+                                        ).length
+                                        const allSelected = selectedCount === categoryProbes.length
+                                        const someSelected = selectedCount > 0 && !allSelected
+
+                                        return (
+                                            <AccordionItem key={category} value={category}>
+                                                <AccordionTrigger className="py-3">
+                                                    <div className="flex items-center space-x-2">
+                                                        <Checkbox
+                                                            id={`category-${category}`}
+                                                            checked={allSelected}
+                                                            className={someSelected ? "bg-primary/50" : ""}
+                                                            onCheckedChange={() => handleCategoryToggle(category)}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        />
+                                                        <span>
+                                                            {category} ({selectedCount}/{categoryProbes.length})
+                                                        </span>
+                                                    </div>
+                                                </AccordionTrigger>
+                                                <AccordionContent>
+                                                    <div className="space-y-2 pl-6">
+                                                        {categoryProbes.map((probe) => (
+                                                            <div key={probe.id} className="flex items-center space-x-2">
+                                                                <Checkbox
+                                                                    id={probe.id}
+                                                                    checked={selectedProbes.includes(probe.id)}
+                                                                    onCheckedChange={() => handleProbeToggle(probe.id)}
+                                                                />
+                                                                <label
+                                                                    htmlFor={probe.id}
+                                                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                                                >
+                                                                    {probe.name}
+                                                                </label>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </AccordionContent>
+                                            </AccordionItem>
+                                        )
+                                    })}
+                                </Accordion>
+                            </ScrollArea>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Run Button */}
+                <Button
+                    className="w-full"
+                    onClick={handleSubmit}
+                    disabled={isLoading}
+                >
+                    {isLoading ? (
+                        <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Running Probes...
+                        </>
+                    ) : (
+                        "Run Selected Probes"
+                    )}
+                </Button>
+            </CardContent>
+        </Card>
+    )
 } 

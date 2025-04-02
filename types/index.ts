@@ -32,4 +32,29 @@ export interface DashboardStats {
     requestsByStatus: Record<string, number>;
     requestsOverTime: Array<{ time: string; count: number }>;
     topEndpoints: Array<{ url: string; count: number }>;
+}
+
+export interface GarakProbe {
+    id: string;
+    name: string;
+    category: string;
+    description?: string;
+}
+
+export interface GroqModel {
+    id: string;
+    name: string;
+}
+
+export interface ProbeRequest {
+    apiKey: string;
+    model: string;
+    probes: string[];
+    customPrompt?: string;
+}
+
+export interface ProbeResult {
+    status: 'success' | 'error';
+    message?: string;
+    logs?: HitLog[];
 } 
